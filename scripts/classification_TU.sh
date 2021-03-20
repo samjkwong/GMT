@@ -9,7 +9,8 @@ python main.py  --type classification_TU \
                 --num-hidden 32 \
                 --num-heads 4 \
                 --lr-schedule \
-                --cluster
+                --cluster \
+                --num-epochs 10
 
 # # PROTEINS
 # python main.py  --type classification_TU \

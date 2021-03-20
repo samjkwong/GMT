@@ -9,7 +9,8 @@ python main.py  --type classification_OGB \
                 --num-hidden 128 \
                 --num-heads 4 \
                 --lr-schedule \
-                --cluster
+                --cluster \
+                --num-epochs 1
 
 # # Tox21
 # python main.py  --type classification_OGB \
