@@ -10,8 +10,8 @@ python main.py  --type classification_OGB \
                 --num-heads 4 \
                 --lr-schedule \
                 --cluster \
-                --num-epochs 500 \
-                --seed 46 \
+                --num-epochs 100 \
+                --seed 42 \
                 --skip-op new
 
 # # Tox2d1
