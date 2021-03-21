@@ -191,6 +191,8 @@ class GraphMultisetTransformer_for_OGB(GraphMultisetTransformer):
         self.atom_encoder = AtomEncoder(self.nhid)
         self.convs = self.get_convs()
 
+        self.proj = nn.Linear(self.nhid * self.args.num_convs, self.nhid)
+
     def forward(self, data):
 
         x, edge_index, edge_attr, batch = data.x, data.edge_index, data.edge_attr, data.batch
@@ -208,6 +210,10 @@ class GraphMultisetTransformer_for_OGB(GraphMultisetTransformer):
         # For jumping knowledge scheme
         x = torch.cat(xs, dim=1)
 
+        # Calculate sum pooling.
+        x_gsp = gsp(x, batch) # shape: (batch, embed dim)
+        x_gsp = self.proj(x_gsp)
+
         # For Graph Multiset Transformer
         for _index, _model_str in enumerate(self.model_sequence):
 
@@ -221,11 +227,14 @@ class GraphMultisetTransformer_for_OGB(GraphMultisetTransformer):
 
             if _model_str == 'GMPool_G':
 
-                batch_x = self.pools[_index](batch_x, attention_mask=extended_attention_mask, graph=(x, edge_index, batch))
+                if _index != 0:
+                    batch_x = self.pools[_index](batch_x, attention_mask=extended_attention_mask, graph=(x, edge_index, batch), skip=x_gsp)
+                else:
+                    batch_x = self.pools[_index](batch_x, attention_mask=extended_attention_mask, graph=(x, edge_index, batch), skip=None)
 
             else:
 
-                batch_x = self.pools[_index](batch_x, attention_mask=extended_attention_mask)
+                batch_x = self.pools[_index](batch_x, attention_mask=extended_attention_mask, skip=x_gsp)
 
             extended_attention_mask = None
 

@@ -10,7 +10,8 @@ python main.py  --type classification_OGB \
                 --num-heads 4 \
                 --lr-schedule \
                 --cluster \
-                --num-epochs 1
+                --num-epochs 50 \
+                --seed 46
 
 # # Tox21
 # python main.py  --type classification_OGB \

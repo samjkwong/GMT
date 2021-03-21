@@ -18,6 +18,8 @@ from utils.data import num_graphs
 from utils.logger import Logger
 from models.nets import GraphMultisetTransformer_for_OGB
 
+import wandb
+
 class Trainer(object):
 
     def __init__(self, args):
@@ -106,6 +108,8 @@ class Trainer(object):
 
     def train(self):
 
+        wandb.init(entity='samjkwong', project='gmt')
+
         train_loader, val_loader, test_loader = self.load_dataloader()
 
         # Load Model & Optimizer
@@ -152,6 +156,15 @@ class Trainer(object):
 
             train_perf, valid_perf, test_perf = self.eval(train_loader), self.eval(val_loader), self.eval(test_loader)
             self.organize_log(logger, train_perf, valid_perf, test_perf, total_loss, epoch)
+
+            # WANDB logging
+            wandb.log({
+                'Epoch': epoch,
+                'Train Loss': total_loss,
+                'Train ROC-AUC': train_perf,
+                'Val ROC-AUC': valid_perf,
+                'Test ROC-AUC': test_perf
+            })
 
         t_end = time.perf_counter()
 

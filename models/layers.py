@@ -29,7 +29,7 @@ class MAB(nn.Module):
         if cluster == True:
             self.softmax_dim = 1
 
-    def forward(self, Q, K, attention_mask=None, graph=None, return_attn=False):
+    def forward(self, Q, K, attention_mask=None, graph=None, return_attn=False, skip=None):
         Q = self.fc_q(Q)
 
         # Adj: Exist (graph is not None), or Identity (else)
@@ -58,10 +58,17 @@ class MAB(nn.Module):
         else:
             A = torch.softmax(Q_.bmm(K_.transpose(1,2))/math.sqrt(self.dim_V), self.softmax_dim)
 
+
+
         O = torch.cat((Q_ + A.bmm(V_)).split(Q.size(0), 0), 2)
         O = O if getattr(self, 'ln0', None) is None else self.ln0(O)
         O = O + F.relu(self.fc_o(O))
         O = O if getattr(self, 'ln1', None) is None else self.ln1(O)
+
+        # # breakpoint()
+        # if skip is not None:
+        #     O = O + skip.unsqueeze(1)
+
         if return_attn:
             return O, A
         else:
@@ -107,8 +114,8 @@ class SAB(nn.Module):
         
         self.mab = MAB(dim_in, dim_in, dim_out, num_heads, ln=ln, cluster=cluster, conv=mab_conv)
 
-    def forward(self, X, attention_mask=None, graph=None):
-        return self.mab(X, X, attention_mask, graph)
+    def forward(self, X, attention_mask=None, graph=None, skip=None):
+        return self.mab(X, X, attention_mask, graph, skip=skip)
 
 class ISAB(nn.Module):
     def __init__(self, dim_in, dim_out, num_heads, num_inds, ln=False, cluster=False, mab_conv=None):
@@ -131,8 +138,8 @@ class PMA(nn.Module):
 
         self.mab = MAB(dim, dim, dim, num_heads, ln=ln, cluster=cluster, conv=mab_conv)
         
-    def forward(self, X, attention_mask=None, graph=None, return_attn=False):
-        return self.mab(self.S.repeat(X.size(0), 1, 1), X, attention_mask, graph, return_attn)
+    def forward(self, X, attention_mask=None, graph=None, return_attn=False, skip=None):
+        return self.mab(self.S.repeat(X.size(0), 1, 1), X, attention_mask, graph, return_attn, skip=skip)
 
 ### GCN convolution along the graph structure
 class GCNConv_for_OGB(MessagePassing):
