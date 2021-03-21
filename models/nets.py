@@ -64,10 +64,13 @@ class GraphRepresentation(torch.nn.Module):
 
         return pools
 
-    def get_classifier(self):
-
+    def get_classifier(self, skip_op=None):
+        if skip_op == 'cat':
+            input_dim = self.nhid * 3
+        else:
+            input_dim = self.nhid
         return nn.Sequential(
-            nn.Linear(self.nhid, self.nhid),
+            nn.Linear(input_dim, self.nhid),
             nn.ReLU(),
             nn.Dropout(p=self.dropout_ratio),
             nn.Linear(self.nhid, self.nhid//2),
@@ -82,6 +85,8 @@ class GraphMultisetTransformer(GraphRepresentation):
 
         super(GraphMultisetTransformer, self).__init__(args)
 
+        self.skip_op = args.skip_op
+
         self.ln = args.ln
         self.num_heads = args.num_heads
         self.cluster = args.cluster
@@ -89,8 +94,8 @@ class GraphMultisetTransformer(GraphRepresentation):
         self.model_sequence = args.model_string.split('-')
 
         self.convs = self.get_convs()
-        self.pools = self.get_pools()
-        self.classifier = self.get_classifier()
+        self.pools = self.get_pools(skip_op=self.skip_op)
+        self.classifier = self.get_classifier(skip_op=self.skip_op)
 
     def forward(self, data):
 
@@ -135,10 +140,9 @@ class GraphMultisetTransformer(GraphRepresentation):
 
         return F.log_softmax(x, dim=-1)
 
-    def get_pools(self, _input_dim=None, reconstruction=False, skip=None):
+    def get_pools(self, _input_dim=None, reconstruction=False, skip_op=None):
 
         pools = nn.ModuleList()
-
         _input_dim = self.nhid * self.args.num_convs if _input_dim is None else _input_dim
         _output_dim = self.nhid
         _num_nodes = ceil(self.pooling_ratio * self.args.avg_num_nodes)
@@ -149,7 +153,7 @@ class GraphMultisetTransformer(GraphRepresentation):
                 
                 _num_nodes = 1
 
-            if _index > 0 and skip == "cat":
+            if _index > 0 and skip_op == "cat":
 
                 _input_dim = _input_dim + self.nhid
 
@@ -170,7 +174,7 @@ class GraphMultisetTransformer(GraphRepresentation):
                 _num_nodes = ceil(self.pooling_ratio * _num_nodes)
 
             elif _model_str == 'SelfAtt':
-
+                # breakpoint()
                 pools.append(
                     SAB(_input_dim, _output_dim, self.num_heads, ln=self.ln, cluster=self.cluster)
                 )
@@ -195,7 +199,6 @@ class GraphMultisetTransformer_for_OGB(GraphMultisetTransformer):
         self.atom_encoder = AtomEncoder(self.nhid)
         self.convs = self.get_convs()
 
-        self.skip_op = self.args.skip_op
         if self.skip_op is not None:
             self.proj = nn.Linear(self.nhid * self.args.num_convs, self.nhid)
 
@@ -218,6 +221,8 @@ class GraphMultisetTransformer_for_OGB(GraphMultisetTransformer):
         # For jumping knowledge scheme
         x = torch.cat(xs, dim=1)
 
+        # breakpoint()
+
         # Calculate sum pooling
         if self.skip_op is not None:
             x_gsp = self.proj(gsp(x, batch))
@@ -235,13 +240,13 @@ class GraphMultisetTransformer_for_OGB(GraphMultisetTransformer):
                 extended_attention_mask = extended_attention_mask.to(dtype=next(self.parameters()).dtype)
                 extended_attention_mask = (1.0 - extended_attention_mask) * -1e9
 
-            if _index > 0:
-                skip = x_gsp
-            else:
-                skip = None
+            # if _index > 0:
+            #     skip = x_gsp
+            # else:
+            #     skip = None
 
             skip_kwargs = {
-                "skip": skip,
+                "skip": x_gsp,
                 "skip_op": self.skip_op
             }
 
@@ -259,6 +264,7 @@ class GraphMultisetTransformer_for_OGB(GraphMultisetTransformer):
 
         x = batch_x.squeeze(1)
 
+        # breakpoint()
         # For Classification
         x = self.classifier(x)
 

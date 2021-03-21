@@ -16,6 +16,7 @@ class MAB(nn.Module):
         super(MAB, self).__init__()
         self.dim_V = dim_V
         self.num_heads = num_heads
+        # breakpoint()
         self.fc_q = nn.Linear(dim_Q, dim_V)
 
         self.fc_k, self.fc_v = self.get_fc_kv(dim_K, dim_V, conv)
@@ -30,6 +31,7 @@ class MAB(nn.Module):
             self.softmax_dim = 1
 
     def forward(self, Q, K, attention_mask=None, graph=None, return_attn=False, skip=None, skip_op=None):
+
         Q = self.fc_q(Q)
 
         # Adj: Exist (graph is not None), or Identity (else)
@@ -43,7 +45,6 @@ class MAB(nn.Module):
             V, _ = to_dense_batch(V, batch)
 
         else:
-
             K, V = self.fc_k(K), self.fc_v(K)
 
         dim_split = self.dim_V // self.num_heads
@@ -113,10 +114,11 @@ class MAB(nn.Module):
 class SAB(nn.Module):
     def __init__(self, dim_in, dim_out, num_heads, ln=False, cluster=False, mab_conv=None):
         super(SAB, self).__init__()
-        
+        # breakpoint()
         self.mab = MAB(dim_in, dim_in, dim_out, num_heads, ln=ln, cluster=cluster, conv=mab_conv)
 
     def forward(self, X, attention_mask=None, graph=None, skip=None, skip_op=None):
+        # breakpoint()
         return self.mab(X, X, attention_mask, graph, skip=skip, skip_op=skip_op)
 
 class ISAB(nn.Module):
@@ -141,6 +143,7 @@ class PMA(nn.Module):
         self.mab = MAB(dim, dim, dim, num_heads, ln=ln, cluster=cluster, conv=mab_conv)
         
     def forward(self, X, attention_mask=None, graph=None, return_attn=False, skip=None, skip_op=None):
+        # breakpoint()
         return self.mab(self.S.repeat(X.size(0), 1, 1), X, attention_mask, graph, return_attn, skip=skip, skip_op=skip_op)
 
 ### GCN convolution along the graph structure
