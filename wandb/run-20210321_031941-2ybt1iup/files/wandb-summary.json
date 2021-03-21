@@ -1,0 +1,1 @@
+{"Epoch": 99, "Train Loss": 0.11158099468999103, "Train ROC-AUC": {"rocauc": 0.8483187294880119}, "Val ROC-AUC": {"rocauc": 0.8101116990005879}, "Test ROC-AUC": {"rocauc": 0.7485428455551479}, "_runtime": 1860, "_timestamp": 1616323841, "_step": 99}

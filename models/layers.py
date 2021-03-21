@@ -69,6 +69,8 @@ class MAB(nn.Module):
                 O = torch.cat([O, skip.unsqueeze(1).repeat(1, O.shape[1], 1)], dim=-1)
             elif skip_op == "sum":
                 O = O + skip.unsqueeze(1)
+            elif skip_op == "new":
+                O = torch.cat([O, skip.unsqueeze(1)], dim=1)
             else:
                 raise TypeError("skip_op cannot be None when skip is passed")
 

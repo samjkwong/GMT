@@ -10,11 +10,11 @@ python main.py  --type classification_OGB \
                 --num-heads 4 \
                 --lr-schedule \
                 --cluster \
-                --num-epochs 50 \
-                --seed 42 \
-                --skip-op cat
+                --num-epochs 500 \
+                --seed 46 \
+                --skip-op new
 
-# # Tox21
+# # Tox2d1
 # python main.py  --type classification_OGB \
 #                 --data ogbg-moltox21 \
 #                 --model GMT \

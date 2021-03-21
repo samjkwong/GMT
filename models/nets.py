@@ -224,8 +224,10 @@ class GraphMultisetTransformer_for_OGB(GraphMultisetTransformer):
         # breakpoint()
 
         # Calculate sum pooling
-        if self.skip_op is not None:
+        if self.skip_op is not None and self.skip_op != 'new':
             x_gsp = self.proj(gsp(x, batch))
+        elif self.skip_op == 'new':
+            x_gsp = gsp(x, batch)
         else:
             x_gsp = None
 
@@ -245,6 +247,8 @@ class GraphMultisetTransformer_for_OGB(GraphMultisetTransformer):
             # else:
             #     skip = None
 
+            if _index > 0 and self.skip_op == 'new':
+                x_gsp = None
             skip_kwargs = {
                 "skip": x_gsp,
                 "skip_op": self.skip_op
