@@ -135,7 +135,7 @@ class GraphMultisetTransformer(GraphRepresentation):
 
         return F.log_softmax(x, dim=-1)
 
-    def get_pools(self, _input_dim=None, reconstruction=False):
+    def get_pools(self, _input_dim=None, reconstruction=False, skip=None):
 
         pools = nn.ModuleList()
 
@@ -148,6 +148,10 @@ class GraphMultisetTransformer(GraphRepresentation):
             if (_index == len(self.model_sequence) - 1) and (reconstruction == False):
                 
                 _num_nodes = 1
+
+            if _index > 0 and skip == "cat":
+
+                _input_dim = _input_dim + self.nhid
 
             if _model_str == 'GMPool_G':
 
@@ -191,7 +195,11 @@ class GraphMultisetTransformer_for_OGB(GraphMultisetTransformer):
         self.atom_encoder = AtomEncoder(self.nhid)
         self.convs = self.get_convs()
 
-        self.proj = nn.Linear(self.nhid * self.args.num_convs, self.nhid)
+        self.skip_op = selg.args.skip_op
+        if self.skip_op is not None:
+            self.proj = nn.Linear(self.nhid * self.args.num_convs, self.nhid)
+
+        breakpoint()
 
     def forward(self, data):
 
@@ -210,9 +218,11 @@ class GraphMultisetTransformer_for_OGB(GraphMultisetTransformer):
         # For jumping knowledge scheme
         x = torch.cat(xs, dim=1)
 
-        # Calculate sum pooling.
-        x_gsp = gsp(x, batch) # shape: (batch, embed dim)
-        x_gsp = self.proj(x_gsp)
+        # Calculate sum pooling
+        if self.skip_op is not None:
+            x_gsp = self.proj(gsp(x, batch))
+        else:
+            x_gsp = None
 
         # For Graph Multiset Transformer
         for _index, _model_str in enumerate(self.model_sequence):
@@ -225,16 +235,25 @@ class GraphMultisetTransformer_for_OGB(GraphMultisetTransformer):
                 extended_attention_mask = extended_attention_mask.to(dtype=next(self.parameters()).dtype)
                 extended_attention_mask = (1.0 - extended_attention_mask) * -1e9
 
+            if _index > 0:
+                skip = x_gsp
+            else:
+                skip = None
+
+            skip_kwargs = {
+                "skip": skip,
+                "skip_op": self.skip_op
+            }
+
             if _model_str == 'GMPool_G':
 
-                if _index != 0:
-                    batch_x = self.pools[_index](batch_x, attention_mask=extended_attention_mask, graph=(x, edge_index, batch), skip=x_gsp)
-                else:
-                    batch_x = self.pools[_index](batch_x, attention_mask=extended_attention_mask, graph=(x, edge_index, batch), skip=None)
+                batch_x = self.pools[_index](
+                    batch_x, attention_mask=extended_attention_mask, graph=(x, edge_index, batch), **skip_kwargs)
 
             else:
 
-                batch_x = self.pools[_index](batch_x, attention_mask=extended_attention_mask, skip=x_gsp)
+                batch_x = self.pools[_index](
+                    batch_x, attention_mask=extended_attention_mask, skip=x_gsp, skip_op=self.skip_op, **skip_kwargs)
 
             extended_attention_mask = None
 

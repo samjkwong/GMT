@@ -29,7 +29,7 @@ class MAB(nn.Module):
         if cluster == True:
             self.softmax_dim = 1
 
-    def forward(self, Q, K, attention_mask=None, graph=None, return_attn=False, skip=None):
+    def forward(self, Q, K, attention_mask=None, graph=None, return_attn=False, skip=None, skip_op=None):
         Q = self.fc_q(Q)
 
         # Adj: Exist (graph is not None), or Identity (else)
@@ -58,16 +58,18 @@ class MAB(nn.Module):
         else:
             A = torch.softmax(Q_.bmm(K_.transpose(1,2))/math.sqrt(self.dim_V), self.softmax_dim)
 
-
-
         O = torch.cat((Q_ + A.bmm(V_)).split(Q.size(0), 0), 2)
         O = O if getattr(self, 'ln0', None) is None else self.ln0(O)
         O = O + F.relu(self.fc_o(O))
         O = O if getattr(self, 'ln1', None) is None else self.ln1(O)
 
-        # # breakpoint()
-        # if skip is not None:
-        #     O = O + skip.unsqueeze(1)
+        if skip is not None:
+            if skip_op == "cat":
+                O = torch.cat([O, skip.unsqueeze(1).repeat(1, O.shape[1], 1)], dim=-1)
+            elif skip_op == "sum":
+                O = O + skip.unsqueeze(1)
+            else:
+                raise TypeError("skip_op cannot be None when skip is passed")
 
         if return_attn:
             return O, A

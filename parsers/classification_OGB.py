@@ -47,6 +47,8 @@ class Parser:
         
         self.parser.add_argument('--experiment-number', default='001', type=str)
 
+        self.parser.add_argument('--skip-op', default=None, type=str)
+
     def parse(self):
 
         args, unparsed  = self.parser.parse_known_args()
