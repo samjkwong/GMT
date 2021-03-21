@@ -253,7 +253,7 @@ class GraphMultisetTransformer_for_OGB(GraphMultisetTransformer):
             else:
 
                 batch_x = self.pools[_index](
-                    batch_x, attention_mask=extended_attention_mask, skip=x_gsp, skip_op=self.skip_op, **skip_kwargs)
+                    batch_x, attention_mask=extended_attention_mask, **skip_kwargs)
 
             extended_attention_mask = None
 
