@@ -11,7 +11,7 @@ python main.py  --type classification_OGB \
                 --lr-schedule \
                 --cluster \
                 --num-epochs 50 \
-                --seed 46 \
+                --seed 42 \
                 --skip-op cat
 
 # # Tox21

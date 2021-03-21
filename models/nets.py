@@ -195,11 +195,11 @@ class GraphMultisetTransformer_for_OGB(GraphMultisetTransformer):
         self.atom_encoder = AtomEncoder(self.nhid)
         self.convs = self.get_convs()
 
-        self.skip_op = selg.args.skip_op
+        self.skip_op = self.args.skip_op
         if self.skip_op is not None:
             self.proj = nn.Linear(self.nhid * self.args.num_convs, self.nhid)
 
-        breakpoint()
+        # breakpoint()
 
     def forward(self, data):
 
