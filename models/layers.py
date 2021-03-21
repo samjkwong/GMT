@@ -116,8 +116,8 @@ class SAB(nn.Module):
         
         self.mab = MAB(dim_in, dim_in, dim_out, num_heads, ln=ln, cluster=cluster, conv=mab_conv)
 
-    def forward(self, X, attention_mask=None, graph=None, skip=None):
-        return self.mab(X, X, attention_mask, graph, skip=skip)
+    def forward(self, X, attention_mask=None, graph=None, skip=None, skip_op=None):
+        return self.mab(X, X, attention_mask, graph, skip=skip, skip_op=skip_op)
 
 class ISAB(nn.Module):
     def __init__(self, dim_in, dim_out, num_heads, num_inds, ln=False, cluster=False, mab_conv=None):
@@ -140,8 +140,8 @@ class PMA(nn.Module):
 
         self.mab = MAB(dim, dim, dim, num_heads, ln=ln, cluster=cluster, conv=mab_conv)
         
-    def forward(self, X, attention_mask=None, graph=None, return_attn=False, skip=None):
-        return self.mab(self.S.repeat(X.size(0), 1, 1), X, attention_mask, graph, return_attn, skip=skip)
+    def forward(self, X, attention_mask=None, graph=None, return_attn=False, skip=None, skip_op=None):
+        return self.mab(self.S.repeat(X.size(0), 1, 1), X, attention_mask, graph, return_attn, skip=skip, skip_op=skip_op)
 
 ### GCN convolution along the graph structure
 class GCNConv_for_OGB(MessagePassing):
